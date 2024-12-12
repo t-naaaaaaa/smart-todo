@@ -1,4 +1,5 @@
 // src/hooks/useNotifications.ts
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { Todo } from "@/types";

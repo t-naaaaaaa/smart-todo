@@ -1,4 +1,5 @@
 // src/hooks/useCalendar.ts
+"use client";
 
 import { useState, useCallback, useEffect } from "react";
 import { Todo } from "@/types";

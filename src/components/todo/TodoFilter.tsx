@@ -1,4 +1,5 @@
 // src/components/todo/TodoFilter.tsx
+"use client";
 
 import { useState, useEffect } from "react";
 import { TodoCategory, Priority, TodoFilter } from "@/types";

@@ -1,4 +1,5 @@
 // src/components/todo/TodoList.tsx
+"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { Todo, TodoCategory } from "@/types";

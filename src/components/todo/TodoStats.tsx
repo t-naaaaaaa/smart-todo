@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { Todo, TodoStats as TodoStatsType } from "@/types";
 import { todoDb } from "@/lib/db";

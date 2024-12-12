@@ -1,4 +1,5 @@
 // src/components/todo/TodoForm.tsx
+"use client";
 
 import { useState, useCallback } from "react";
 import { useAuth } from "@/components/auth/AuthContext";

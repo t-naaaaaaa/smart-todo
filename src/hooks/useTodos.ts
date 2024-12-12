@@ -1,4 +1,5 @@
 // src/hooks/useTodos.ts
+"use client";
 
 import { useState, useCallback, useEffect } from "react";
 import { Todo, TodoFilter } from "@/types";

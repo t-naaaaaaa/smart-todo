@@ -1,4 +1,5 @@
 // src/components/ui/Input.tsx
+"use client";
 
 import { forwardRef } from "react";
 import { AlertCircle } from "lucide-react";

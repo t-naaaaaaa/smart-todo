@@ -1,6 +1,8 @@
 // src/types/database.ts
 
-import { Timestamp, DocumentData, SnapshotOptions } from "@firebase/firestore";
+// import { Timestamp, DocumentData, SnapshotOptions } from "@firebase/firestore";
+
+import { Timestamp } from "@firebase/firestore";
 import { Todo, User, NotificationSettings } from "./index";
 
 // Firestoreドキュメントをより厳密に
@@ -21,7 +23,7 @@ export interface FirestoreTodo
   extends Omit<Todo, "createdAt" | "updatedAt" | "dueDate" | "completedAt">,
     FirestoreDocument {
   dueDate: Timestamp;
-  completedAt?: Timestamp;
+  completedAt?: Timestamp | null;
 }
 
 // Firestore通知設定ドキュメントType

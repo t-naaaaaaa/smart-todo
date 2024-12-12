@@ -10,12 +10,15 @@ import {
   query,
   where,
   orderBy,
-  limit,
+  //   limit,
   Timestamp,
   serverTimestamp,
 } from "firebase/firestore";
 
-import { collections, COLLECTIONS } from "./db/schema";
+import {
+  collections,
+  // COLLECTIONS
+} from "./db/schema";
 import { FirestoreTodo, FirestoreUser } from "@/types/database";
 import { Todo, User, TodoCategory } from "@/types";
 
@@ -86,25 +89,59 @@ export const todoDb = {
   },
 
   // Todo更新
-  async update(todoId: string, updates: Partial<Todo>): Promise<void> {
+  // async update(
+  //   todoId: string,
+  //   updates: Partial<Omit<FirestoreTodo, "id">>
+  // ): Promise<void> {
+  //   const todoRef = doc(collections.todos(), todoId);
+  //   const updateData = {
+  //     ...updates,
+  //     updatedAt: serverTimestamp(),
+  //   };
+
+  //   if (updates.dueDate) {
+  //     updateData.dueDate = Timestamp.fromDate(updates.dueDate as Date);
+  //   }
+  //   if (updates.completed !== undefined) {
+  //     updateData.completedAt = updates.completed
+  //       ? Timestamp.fromDate(new Date())
+  //       : null;
+  //   }
+
+  //   await updateDoc(todoRef, updateData);
+  // },
+  async update(
+    todoId: string,
+    updates: Partial<Omit<Todo, "id" | "createdAt" | "updatedAt">>
+  ): Promise<void> {
     const todoRef = doc(collections.todos(), todoId);
-    const updateData = {
-      ...updates,
-      updatedAt: serverTimestamp(),
+
+    const updateData: Partial<FirestoreTodo> = {
+      updatedAt: serverTimestamp() as Timestamp,
     };
 
-    if (updates.dueDate) {
+    // dueDate の処理
+    if (updates.dueDate instanceof Date) {
       updateData.dueDate = Timestamp.fromDate(updates.dueDate);
     }
+
+    // completed の処理
     if (updates.completed !== undefined) {
+      updateData.completed = updates.completed;
       updateData.completedAt = updates.completed
         ? Timestamp.fromDate(new Date())
         : null;
     }
 
+    // その他のフィールドの処理
+    Object.entries(updates).forEach(([key, value]) => {
+      if (key !== "dueDate" && key !== "completed") {
+        updateData[key as keyof FirestoreTodo] = value;
+      }
+    });
+
     await updateDoc(todoRef, updateData);
   },
-
   // Todo削除
   async delete(todoId: string): Promise<void> {
     await deleteDoc(doc(collections.todos(), todoId));

@@ -28,6 +28,24 @@ export class GoogleCalendarService {
   ];
 
   // アクセストークンの取得
+  //   private static async getAccessToken(): Promise<string | null> {
+  //     try {
+  //       const provider = new GoogleAuthProvider();
+  //       this.SCOPES.forEach((scope) => provider.addScope(scope));
+
+  //       const result = await signInWithPopup(auth, provider);
+  //       const credential = GoogleAuthProvider.credentialFromResult(result);
+
+  //       if (!credential) {
+  //         throw new Error("No credentials returned from Google Auth");
+  //       }
+
+  //       return credential.accessToken;
+  //     } catch (error) {
+  //       console.error("Failed to get access token:", error);
+  //       return null;
+  //     }
+  //   }
   private static async getAccessToken(): Promise<string | null> {
     try {
       const provider = new GoogleAuthProvider();
@@ -36,8 +54,8 @@ export class GoogleCalendarService {
       const result = await signInWithPopup(auth, provider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
 
-      if (!credential) {
-        throw new Error("No credentials returned from Google Auth");
+      if (!credential || !credential.accessToken) {
+        throw new Error("No access token returned from Google Auth");
       }
 
       return credential.accessToken;

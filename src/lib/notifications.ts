@@ -52,15 +52,26 @@ export class NotificationService {
       return;
     }
 
+    // const options: NotificationOptions = {
+    //   body: payload.message,
+    //   icon: "/notification-icon.png",
+    //   tag: payload.id,
+    //   timestamp: payload.timestamp.getTime(),
+    //   requireInteraction: true,
+    //   data: {
+    //     type: payload.type,
+    //     todoId: payload.todoId,
+    //   },
+    // };
     const options: NotificationOptions = {
       body: payload.message,
       icon: "/notification-icon.png",
       tag: payload.id,
-      timestamp: payload.timestamp.getTime(),
       requireInteraction: true,
       data: {
         type: payload.type,
         todoId: payload.todoId,
+        timestamp: payload.timestamp.getTime(), // dataに含める
       },
     };
 

@@ -1,7 +1,11 @@
 // src/hooks/useCalendar.ts
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import {
+  useState,
+  // useCallback,
+  useEffect
+} from "react";
 import { Todo } from "@/types";
 import { GoogleCalendarService } from "@/lib/googleCalendar";
 import { todoDb } from "@/lib/db";

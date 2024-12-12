@@ -26,11 +26,11 @@ export default function DashboardPage() {
   >(undefined);
 
   const {
-    todos,
+    // todos,
     filteredTodos,
     loading: todosLoading,
     error,
-    filter,
+    // filter,
     setFilter,
     refresh,
   } = useTodos({

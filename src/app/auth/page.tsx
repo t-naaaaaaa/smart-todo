@@ -26,18 +26,16 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader
-          title={
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900">Smart Todo</h1>
-              <p className="mt-2 text-gray-600">
-                Googleアカウントでサインインして、
-                <br />
-                スマートなタスク管理を始めましょう
-              </p>
-            </div>
-          }
-        />
+        <CardHeader>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Smart Todo</h1>
+            <p className="mt-2 text-gray-600">
+              Googleアカウントでサインインして、
+              <br />
+              スマートなタスク管理を始めましょう
+            </p>
+          </div>
+        </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-center">

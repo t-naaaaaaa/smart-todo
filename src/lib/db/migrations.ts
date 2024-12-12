@@ -7,13 +7,13 @@ import {
   getDocs,
   getDoc,
   setDoc,
-  DocumentData,
-  DocumentReference,
+  // DocumentData,
+  // DocumentReference,
   FieldValue,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { collections } from "./schema";
-import { FirestoreTodo } from "@/types/database";
+// import { FirestoreTodo } from "@/types/database";
 
 interface Migration {
   version: number;

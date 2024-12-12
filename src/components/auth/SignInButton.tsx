@@ -6,13 +6,17 @@ import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { useAuth } from "./AuthContext";
 
 interface SignInButtonProps {
-  variant?: "primary" | "outline";
+  size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
+  variant?: 'primary' | 'outline';
   className?: string;
 }
 
-export function SignInButton({
-  variant = "primary",
-  className = "",
+export function SignInButton({ 
+  size = 'md', 
+  fullWidth = false,
+  variant = 'primary',
+  className = ''
 }: SignInButtonProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -42,8 +46,18 @@ export function SignInButton({
     }
   };
 
-  const baseStyles =
-    "px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center";
+  const sizeStyles = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2',
+    lg: 'px-6 py-3 text-lg'
+  };
+
+  const baseStyles = `
+    rounded-lg font-medium transition-colors duration-200 
+    flex items-center justify-center
+    ${sizeStyles[size]}
+    ${fullWidth ? 'w-full' : ''}
+  `;
   const variantStyles = {
     primary: "bg-blue-500 text-white hover:bg-blue-600",
     outline: "border-2 border-blue-500 text-blue-500 hover:bg-blue-50",

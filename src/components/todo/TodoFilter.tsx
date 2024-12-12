@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TodoCategory, Priority, TodoFilter } from "@/types";
+import { TodoCategory, Priority, type TodoFilter } from "@/types";
 import {
   Clock,
   CalendarDays,

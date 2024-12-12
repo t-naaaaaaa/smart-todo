@@ -44,11 +44,13 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
   }
 );
 
-export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CardHeaderBaseProps {
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
 }
+
+export type CardHeaderProps = CardHeaderBaseProps & React.HTMLAttributes<HTMLDivElement>;
 
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ title, description, action, className = "", ...props }, ref) => {
@@ -56,9 +58,9 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
       <div ref={ref} className={`space-y-1.5 ${className}`} {...props}>
         <div className="flex items-center justify-between">
           {title && (
-            <h3 className="font-semibold leading-none tracking-tight">
+            <div className="font-semibold leading-none tracking-tight">
               {title}
-            </h3>
+            </div>
           )}
           {action && <div>{action}</div>}
         </div>
@@ -68,25 +70,16 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   }
 );
 
-export interface CardContentProps
-  extends React.HTMLAttributes<HTMLDivElement> {}
-
-export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
+export const CardContent = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className = "", ...props }, ref) => {
     return <div ref={ref} className={className} {...props} />;
   }
 );
 
-export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
+export const CardFooter = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className = "", ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={`flex items-center pt-4 ${className}`}
-        {...props}
-      />
+      <div ref={ref} className={`flex items-center pt-4 ${className}`} {...props} />
     );
   }
 );

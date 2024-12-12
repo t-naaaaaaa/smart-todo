@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Todo, TodoStats as TodoStatsType } from "@/types";
+import {
+  // Todo,
+  TodoStats as TodoStatsType
+} from "@/types";
 import { todoDb } from "@/lib/db";
 import { dateUtils } from "@/utils/date";
-import { Card, CardContent } from "@/components/ui/Card";
+// import { Card, CardContent } from "@/components/ui/Card";
 
 // lucide-reactのアイコンを正しくインポート
 import {
@@ -12,7 +15,7 @@ import {
   AlertTriangle,
   Clock,
   CalendarDays,
-  Calendar,
+  // Calendar,
   ListTodo,
   LucideIcon,
 } from "lucide-react";
@@ -45,7 +48,7 @@ export function TodoStats({ userId }: TodoStatsProps) {
     const calculateStats = async () => {
       try {
         const todos = await todoDb.listByUser(userId);
-        const currentDate = new Date();
+        // const currentDate = new Date();
 
         const newStats = todos.reduce(
           (acc, todo) => {

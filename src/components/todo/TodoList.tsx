@@ -9,15 +9,24 @@ import { TodoItem } from "./TodoItem";
 import { Loader2, AlertCircle } from "lucide-react";
 
 interface TodoListProps {
+  todos: Todo[];
+  onUpdate: () => Promise<void>;
+  onDelete: () => Promise<void>;
   category?: TodoCategory;
   showCompleted?: boolean;
 }
 
-export function TodoList({ category, showCompleted = false }: TodoListProps) {
+export function TodoList({ 
+  todos: initialTodos, 
+  // onUpdate, 
+  // onDelete, 
+  category, 
+  showCompleted = false 
+}: TodoListProps) {
   const { user } = useAuth();
-  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [todos, setTodos] = useState<Todo[]>(initialTodos);
 
   // Todoの取得
   const fetchTodos = async () => {

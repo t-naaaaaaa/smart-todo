@@ -16,6 +16,10 @@ interface UseNotificationsProps {
   userId: string;
 }
 
+interface ExtendedNotificationOptions extends NotificationOptions {
+  renotify?: boolean;
+}
+
 export function useNotifications({ userId }: UseNotificationsProps) {
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: false,
@@ -40,7 +44,7 @@ export function useNotifications({ userId }: UseNotificationsProps) {
 
   // 通知の送信
   const sendNotification = useCallback(
-    (title: string, options: NotificationOptions) => {
+    (title: string, options: ExtendedNotificationOptions) => {
       if (permission === "granted" && settings.enabled) {
         new Notification(title, options);
       }

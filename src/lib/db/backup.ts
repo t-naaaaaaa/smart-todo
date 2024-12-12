@@ -12,12 +12,15 @@ import {
   limit,
   Timestamp,
   writeBatch,
-  DocumentData,
-  DocumentSnapshot,
+  // DocumentData,
+  // DocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { collections, COLLECTIONS } from "./schema";
-import { FirestoreTodo, FirestoreUser } from "@/types/database";
+import {
+  // collections,
+  COLLECTIONS
+} from "./schema";
+// import { FirestoreTodo, FirestoreUser } from "@/types/database";
 
 // バックアップデータの型定義
 interface FirestoreDocument {
@@ -116,12 +119,12 @@ export class DatabaseBackup {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown backup error";
-      const metadata = await this.createBackupMetadata(
-        userId,
-        [],
-        "failed",
-        errorMessage
-      );
+      // const metadata = await this.createBackupMetadata(
+      //   userId,
+      //   [],
+      //   "failed",
+      //   errorMessage
+      // );
       throw new Error(`Backup failed: ${errorMessage}`);
     }
   }

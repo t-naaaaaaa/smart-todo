@@ -89,27 +89,6 @@ export const todoDb = {
   },
 
   // Todo更新
-  // async update(
-  //   todoId: string,
-  //   updates: Partial<Omit<FirestoreTodo, "id">>
-  // ): Promise<void> {
-  //   const todoRef = doc(collections.todos(), todoId);
-  //   const updateData = {
-  //     ...updates,
-  //     updatedAt: serverTimestamp(),
-  //   };
-
-  //   if (updates.dueDate) {
-  //     updateData.dueDate = Timestamp.fromDate(updates.dueDate as Date);
-  //   }
-  //   if (updates.completed !== undefined) {
-  //     updateData.completedAt = updates.completed
-  //       ? Timestamp.fromDate(new Date())
-  //       : null;
-  //   }
-
-  //   await updateDoc(todoRef, updateData);
-  // },
   async update(
     todoId: string,
     updates: Partial<Omit<Todo, "id" | "createdAt" | "updatedAt">>
@@ -136,7 +115,7 @@ export const todoDb = {
     // その他のフィールドの処理
     Object.entries(updates).forEach(([key, value]) => {
       if (key !== "dueDate" && key !== "completed") {
-        updateData[key as keyof FirestoreTodo] = value;
+        (updateData as Partial<FirestoreTodo>)[key as keyof FirestoreTodo] = value;
       }
     });
 

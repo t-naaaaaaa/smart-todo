@@ -8,19 +8,20 @@ import {
   where,
   limit,
   getDocs,
+  getDoc,
   FirestoreError,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// 日付を含むオブジェクトの型
-type DateObject = {
-  [key: string]: Date | Timestamp | DateObject | null | undefined;
-};
+// // 日付を含むオブジェクトの型
+// type DateObject = {
+//   [key: string]: Date | Timestamp | DateObject | null | undefined;
+// };
 
-// DocumentDataの拡張型
-type ExtendedDocumentData = {
-  [key: string]: Date | Timestamp | Record<string, unknown> | null | undefined;
-};
+// // DocumentDataの拡張型
+// type ExtendedDocumentData = {
+//   [key: string]: Date | Timestamp | Record<string, unknown> | null | undefined;
+// };
 
 // FirestoreのErrorコードの型
 type FirestoreErrorCode =
@@ -86,7 +87,7 @@ export const dbUtils = {
 
   // ドキュメントの存在確認
   async exists(docRef: DocumentReference): Promise<boolean> {
-    const doc = await docRef.get();
+    const doc = await getDoc(docRef);
     return doc.exists();
   },
 

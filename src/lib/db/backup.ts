@@ -1,4 +1,4 @@
-// src/lib/db/backup.ts
+// src/lib/db/backup.ts (Part 1)
 
 import {
   collection,
@@ -12,15 +12,9 @@ import {
   limit,
   Timestamp,
   writeBatch,
-  // DocumentData,
-  // DocumentSnapshot,
 } from "firebase/firestore";
-import { db } from "../firebase";
-import {
-  // collections,
-  COLLECTIONS
-} from "./schema";
-// import { FirestoreTodo, FirestoreUser } from "@/types/database";
+import { ensureFirebaseInitialized } from "../firebase";
+import { COLLECTIONS } from "./schema";
 
 // バックアップデータの型定義
 interface FirestoreDocument {
@@ -60,6 +54,7 @@ export class DatabaseBackup {
     status: BackupMetadata["status"] = "complete",
     error?: string
   ): Promise<BackupMetadata> {
+    const { db } = ensureFirebaseInitialized();
     const backupId = `backup_${Date.now()}`;
     const metadata: BackupMetadata = {
       id: backupId,
@@ -72,11 +67,11 @@ export class DatabaseBackup {
     };
 
     await setDoc(doc(db, COLLECTIONS.BACKUPS, backupId), metadata);
-
     return metadata;
   }
 
   async createBackup(userId: string): Promise<BackupMetadata> {
+    const { db } = ensureFirebaseInitialized();
     try {
       const collectionsToBackup = [
         COLLECTIONS.TODOS,
@@ -119,17 +114,12 @@ export class DatabaseBackup {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown backup error";
-      // const metadata = await this.createBackupMetadata(
-      //   userId,
-      //   [],
-      //   "failed",
-      //   errorMessage
-      // );
       throw new Error(`Backup failed: ${errorMessage}`);
     }
-  }
+  }// src/lib/db/backup.ts (Part 2)
 
   async restoreFromBackup(backupId: string): Promise<void> {
+    const { db } = ensureFirebaseInitialized();
     const backupRef = doc(db, COLLECTIONS.BACKUPS, backupId);
     const backupDoc = await getDoc(backupRef);
 
@@ -210,6 +200,7 @@ export class DatabaseBackup {
     userId: string,
     limit_?: number
   ): Promise<BackupMetadata[]> {
+    const { db } = ensureFirebaseInitialized();
     const backupsRef = collection(db, COLLECTIONS.BACKUPS);
     const q = query(
       backupsRef,
@@ -223,6 +214,7 @@ export class DatabaseBackup {
   }
 
   async cleanupOldBackups(userId: string, keepLast: number = 5): Promise<void> {
+    const { db } = ensureFirebaseInitialized();
     const backups = await this.getBackupHistory(userId);
     const backupsToDelete = backups.slice(keepLast);
 

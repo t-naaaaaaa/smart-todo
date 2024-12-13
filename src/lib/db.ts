@@ -23,11 +23,12 @@ import { FirestoreTodo, FirestoreUser } from "@/types/database";
 import { Todo, User, TodoCategory } from "@/types";
 
 // Firestore データ変換ユーティリティ
-const convertTimestampToDate = <T>(data: any): T => {
+const convertTimestampToDate = <T>(data: FirestoreTodo | { [key: string]: unknown }): T => {
   const converted = { ...data };
   Object.keys(data).forEach((key) => {
-    if (data[key] instanceof Timestamp) {
-      converted[key] = data[key].toDate();
+    const value = data[key as keyof typeof data];
+    if (value instanceof Timestamp) {
+      converted[key as keyof typeof converted] = value.toDate();
     }
   });
   return converted as T;
@@ -68,7 +69,7 @@ export const todoDb = {
     return convertTimestampToDate<Todo>(todoSnap.data());
   },
 
-  // ユーザーのTodo一覧取得（カテゴリでフィルタ可能）
+  // ユーザーのTodo一覧取得（カテゴリでフィタ可能）
   async listByUser(userId: string, category?: TodoCategory): Promise<Todo[]> {
     const todosRef = collections.todos();
     const constraints = [
@@ -89,38 +90,73 @@ export const todoDb = {
   },
 
   // Todo更新
+  // async update(
+  //   todoId: string,
+  //   updates: Partial<Omit<Todo, "id" | "createdAt" | "updatedAt">>
+  // ): Promise<void> {
+  //   const todoRef = doc(collections.todos(), todoId);
+
+  //   const updateData: Partial<FirestoreTodo> = {
+  //     updatedAt: serverTimestamp() as Timestamp,
+  //   };
+
+  //   // dueDate の処理
+  //   if (updates.dueDate instanceof Date) {
+  //     updateData.dueDate = Timestamp.fromDate(updates.dueDate);
+  //   }
+
+  //   // completed の処理
+  //   if (updates.completed !== undefined) {
+  //     updateData.completed = updates.completed;
+  //     updateData.completedAt = updates.completed
+  //       ? Timestamp.fromDate(new Date())
+  //       : null;
+  //   }
+
+  //   // その他のフィールドの処理
+  //   Object.entries(updates).forEach(([key, value]) => {
+  //     if (key !== "dueDate" && key !== "completed") {
+  //       // valueがnullまたはundefinedでないことを確認
+  //       if (value !== null) {
+  //         updateData[key as keyof Partial<FirestoreTodo>] = value as NonNullable<Partial<FirestoreTodo>[keyof Partial<FirestoreTodo>]>;
+  //       }
+  //     }
+  //   });
+
+  //   await updateDoc(todoRef, updateData);
+  // },
   async update(
     todoId: string,
     updates: Partial<Omit<Todo, "id" | "createdAt" | "updatedAt">>
-  ): Promise<void> {
+): Promise<void> {
     const todoRef = doc(collections.todos(), todoId);
 
     const updateData: Partial<FirestoreTodo> = {
-      updatedAt: serverTimestamp() as Timestamp,
+        updatedAt: serverTimestamp() as Timestamp,
     };
 
     // dueDate の処理
     if (updates.dueDate instanceof Date) {
-      updateData.dueDate = Timestamp.fromDate(updates.dueDate);
+        updateData.dueDate = Timestamp.fromDate(updates.dueDate);
     }
 
     // completed の処理
     if (updates.completed !== undefined) {
-      updateData.completed = updates.completed;
-      updateData.completedAt = updates.completed
-        ? Timestamp.fromDate(new Date())
-        : null;
+        updateData.completed = updates.completed;
+        updateData.completedAt = updates.completed
+            ? Timestamp.fromDate(new Date())
+            : null;
     }
 
     // その他のフィールドの処理
     Object.entries(updates).forEach(([key, value]) => {
-      if (key !== "dueDate" && key !== "completed") {
-        (updateData as Partial<FirestoreTodo>)[key as keyof FirestoreTodo] = value;
-      }
+        if (key !== "dueDate" && key !== "completed" && value !== null && value !== undefined) {
+            (updateData as Record<string, unknown>)[key] = value;
+        }
     });
 
     await updateDoc(todoRef, updateData);
-  },
+},
   // Todo削除
   async delete(todoId: string): Promise<void> {
     await deleteDoc(doc(collections.todos(), todoId));
@@ -170,13 +206,42 @@ export const userDb = {
     }
   },
 
-  // ユーザー取得
-  async get(userId: string): Promise<User | null> {
-    const userRef = doc(collections.users(), userId);
-    const userSnap = await getDoc(userRef);
+  // ユーザー取得処理の修正
+// userDb の get メソッドの修正
+async get(userId: string): Promise<User | null> {
+  const userRef = doc(collections.users(), userId);
+  const userSnap = await getDoc(userRef);
 
-    if (!userSnap.exists()) return null;
+  if (!userSnap.exists()) return null;
+  
+  const data = userSnap.data();
+  // データが存在しない場合のnullチェック
+  if (!data) return null;
 
-    return convertTimestampToDate<User>(userSnap.data());
-  },
+  // Convert all Timestamp fields to Date
+  const convertedData: FirestoreUser = {
+    ...data,
+    createdAt: data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now(),
+    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt : Timestamp.now(),
+  };
+
+  const user: User = {
+    ...convertedData,
+    createdAt: convertedData.createdAt.toDate(),
+    updatedAt: convertedData.updatedAt.toDate(),
+  };
+
+  return user;
+},
 };
+
+  // ユーザー取得
+//   async get(userId: string): Promise<User | null> {
+//     const userRef = doc(collections.users(), userId);
+//     const userSnap = await getDoc(userRef);
+
+//     if (!userSnap.exists()) return null;
+
+//     return convertTimestampToDate<User>(userSnap.data());
+//   },
+// };

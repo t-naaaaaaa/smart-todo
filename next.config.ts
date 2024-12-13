@@ -2,8 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    // appDirは新しいバージョンではデフォルトで有効
-    serverActions: true,
+    serverActions: {
+      bodySizeLimit: '2mb'
+    }
   }
 }
 

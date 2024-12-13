@@ -1,3 +1,5 @@
+// src/lib/db/migrations.ts
+
 import {
   Timestamp,
   writeBatch,
@@ -7,13 +9,10 @@ import {
   getDocs,
   getDoc,
   setDoc,
-  // DocumentData,
-  // DocumentReference,
   FieldValue,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { ensureFirebaseInitialized } from "../firebase";
 import { collections } from "./schema";
-// import { FirestoreTodo } from "@/types/database";
 
 interface Migration {
   version: number;
@@ -47,6 +46,7 @@ export class DatabaseMigration {
       version: 2,
       description: "Add calendar sync fields to todos",
       up: async () => {
+        const { db } = ensureFirebaseInitialized();
         const todosRef = collections.todos();
         const snapshot = await getDocs(query(todosRef));
 
@@ -62,6 +62,7 @@ export class DatabaseMigration {
         await batch.commit();
       },
       down: async () => {
+        const { db } = ensureFirebaseInitialized();
         const todosRef = collections.todos();
         const snapshot = await getDocs(query(todosRef));
 
@@ -82,12 +83,14 @@ export class DatabaseMigration {
   ];
 
   private async getCurrentVersion(): Promise<number> {
+    const { db } = ensureFirebaseInitialized();
     const migrationRef = doc(db, this.MIGRATION_COLLECTION, "current");
     const snapshot = await getDoc(migrationRef);
     return snapshot.exists() ? snapshot.data()?.version ?? 0 : 0;
   }
 
   private async saveMigrationStatus(status: MigrationStatus): Promise<void> {
+    const { db } = ensureFirebaseInitialized();
     const migrationRef = doc(db, this.MIGRATION_COLLECTION, "current");
     await setDoc(migrationRef, status);
 
@@ -159,6 +162,7 @@ export class DatabaseMigration {
   }
 
   async getMigrationHistory(): Promise<MigrationStatus[]> {
+    const { db } = ensureFirebaseInitialized();
     const migrationsRef = collection(db, this.MIGRATION_COLLECTION);
     const snapshot = await getDocs(query(migrationsRef));
     return snapshot.docs

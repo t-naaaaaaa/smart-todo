@@ -11,7 +11,7 @@ import {
   getDoc,
   FirestoreError,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ensureFirebaseInitialized } from "@/lib/firebase";
 
 // // 日付を含むオブジェクトの型
 // type DateObject = {
@@ -98,6 +98,7 @@ export const dbUtils = {
     value: string | number | boolean | null,
     excludeId?: string
   ): Promise<boolean> {
+    const { db } = ensureFirebaseInitialized();
     const q = query(
       collection(db, collectionName),
       where(field, "==", value),
@@ -109,6 +110,7 @@ export const dbUtils = {
     if (!excludeId) return true;
     return snapshot.docs[0].id !== excludeId;
   },
+
 
   // エラーハンドリング用のユーティリティ
   handleError(error: FirestoreError | Error): never {

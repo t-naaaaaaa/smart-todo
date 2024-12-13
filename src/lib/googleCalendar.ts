@@ -1,9 +1,9 @@
 // src/lib/googleCalendar.ts
 
-import { auth } from "./firebase";
+
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { db } from "./firebase";
 import { doc, setDoc, getDoc, collection } from "firebase/firestore";
+import { ensureFirebaseInitialized } from "./firebase";
 import { Todo } from "@/types";
 import { dateUtils } from "@/utils/date";
 
@@ -27,27 +27,9 @@ export class GoogleCalendarService {
     "https://www.googleapis.com/auth/calendar.events",
   ];
 
-  // アクセストークンの取得
-  //   private static async getAccessToken(): Promise<string | null> {
-  //     try {
-  //       const provider = new GoogleAuthProvider();
-  //       this.SCOPES.forEach((scope) => provider.addScope(scope));
-
-  //       const result = await signInWithPopup(auth, provider);
-  //       const credential = GoogleAuthProvider.credentialFromResult(result);
-
-  //       if (!credential) {
-  //         throw new Error("No credentials returned from Google Auth");
-  //       }
-
-  //       return credential.accessToken;
-  //     } catch (error) {
-  //       console.error("Failed to get access token:", error);
-  //       return null;
-  //     }
-  //   }
   private static async getAccessToken(): Promise<string | null> {
     try {
+      const { auth } = ensureFirebaseInitialized();
       const provider = new GoogleAuthProvider();
       this.SCOPES.forEach((scope) => provider.addScope(scope));
 
@@ -71,6 +53,7 @@ export class GoogleCalendarService {
     todoId: string,
     eventId: string
   ): Promise<void> {
+    const { db } = ensureFirebaseInitialized();
     const mappingRef = doc(collection(db, "calendar_mappings"), `${todoId}`);
     await setDoc(mappingRef, {
       userId,
@@ -81,8 +64,8 @@ export class GoogleCalendarService {
     });
   }
 
-  // マッピング情報の取得
   private static async getEventMapping(todoId: string): Promise<string | null> {
+    const { db } = ensureFirebaseInitialized();
     const mappingRef = doc(collection(db, "calendar_mappings"), `${todoId}`);
     const mappingDoc = await getDoc(mappingRef);
 

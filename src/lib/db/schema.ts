@@ -1,7 +1,7 @@
 // src/lib/db/schema.ts
 
 import { CollectionReference, collection } from "firebase/firestore";
-import { db } from "../firebase";
+import { ensureFirebaseInitialized } from "../firebase";
 import {
   FirestoreUser,
   FirestoreTodo,
@@ -43,6 +43,7 @@ export const VALIDATION_RULES = {
 
 // 各コレクションの型安全な参照を取得する関数
 export function getCollection<T>(name: string): CollectionReference<T> {
+  const { db } = ensureFirebaseInitialized();
   return collection(db, name) as CollectionReference<T>;
 }
 

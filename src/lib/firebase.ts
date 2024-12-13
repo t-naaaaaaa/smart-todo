@@ -1,8 +1,8 @@
-// src/lib/firebase.ts
+"use client";
 
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { Auth, initializeAuth, browserLocalPersistence } from "firebase/auth";
+import { Firestore, getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,24 +13,46 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let firebaseApp: FirebaseApp | undefined;
-let auth: Auth | undefined;
-let db: Firestore | undefined;
+let _app: FirebaseApp | undefined = undefined;
+let _auth: Auth | undefined = undefined;
+let _db: Firestore | undefined = undefined;
+let isInitialized = false;
 
-if (typeof window !== "undefined") {
-  firebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  auth = getAuth(firebaseApp);
-  db = getFirestore(firebaseApp);
+function initializeFirebase() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    if (isInitialized && _app && _auth && _db) {
+      return { app: _app, auth: _auth, db: _db };
+    }
+
+    _app =
+      getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+    // Auth の明示的な初期化
+    _auth = initializeAuth(_app, {
+      persistence: browserLocalPersistence,
+    });
+
+    _db = getFirestore(_app);
+
+    isInitialized = true;
+    return { app: _app, auth: _auth, db: _db };
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+    return null;
+  }
 }
 
-export { firebaseApp, auth, db };
-
-// 初期化確認用のユーティリティ関数
-export const ensureFirebaseInitialized = () => {
-  if (!firebaseApp || !auth || !db) {
-    throw new Error(
-      "Firebase has not been initialized. This method can only be used on the client side."
-    );
+export function ensureFirebaseInitialized() {
+  if (typeof window === "undefined") {
+    throw new Error("Firebase can only be initialized on the client side");
   }
-  return { app: firebaseApp, auth, db };
-};
+
+  const instance = initializeFirebase();
+  if (!instance) {
+    throw new Error("Failed to initialize Firebase");
+  }
+
+  return instance;
+}

@@ -1,26 +1,45 @@
-// src/app/auth/page.tsx
-
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthContext";
 import { SignInButton } from "@/components/auth/SignInButton";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
+import { Error } from "@/components/ui/Error";
 
 export default function AuthPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, error, isInitialized } = useAuth();
   const router = useRouter();
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && isInitialized && user) {
+      setRedirecting(true);
       router.push("/dashboard");
     }
-  }, [user, loading, router]);
+  }, [user, loading, isInitialized, router]);
 
-  if (loading) {
+  // Firebaseの初期化待ち or ローディング中の表示
+  if (!isInitialized || loading) {
     return <Loading fullScreen size="lg" text="読み込み中..." />;
+  }
+
+  // エラー発生時の表示
+  if (error) {
+    return (
+      <Error
+        fullScreen
+        title="認証エラー"
+        message={error.message}
+        retry={() => window.location.reload()}
+      />
+    );
+  }
+
+  // リダイレクト中の表示
+  if (redirecting) {
+    return <Loading fullScreen size="lg" text="ダッシュボードに移動中..." />;
   }
 
   return (
@@ -39,7 +58,11 @@ export default function AuthPage() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-center">
-              <SignInButton size="lg" fullWidth />
+              <SignInButton 
+                size="lg" 
+                fullWidth 
+                className="shadow-sm hover:shadow-md transition-shadow"
+              />
             </div>
             <div className="text-center text-sm text-gray-500">
               <p>サインインすることで、以下の機能が利用できます：</p>

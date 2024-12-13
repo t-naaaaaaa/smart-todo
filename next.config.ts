@@ -1,12 +1,10 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  // ダッシュボードページのSSRを無効化
   experimental: {
-    appDir: true,
-  },
+    // appDirは新しいバージョンではデフォルトで有効
+    serverActions: true,
+  }
 }
 
 module.exports = nextConfig

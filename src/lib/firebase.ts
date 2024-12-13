@@ -1,7 +1,8 @@
 // src/lib/firebase.ts
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,11 +13,24 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// クライアントサイドでのみ初期化を行う
-const firebaseApp = 
-  typeof window !== "undefined" && !getApps().length 
-    ? initializeApp(firebaseConfig) 
-    : getApps()[0];
+let firebaseApp: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
 
-export const auth = getAuth(firebaseApp);
-export const db = getFirestore(firebaseApp);
+if (typeof window !== "undefined") {
+  firebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  auth = getAuth(firebaseApp);
+  db = getFirestore(firebaseApp);
+}
+
+export { firebaseApp, auth, db };
+
+// 初期化確認用のユーティリティ関数
+export const ensureFirebaseInitialized = () => {
+  if (!firebaseApp || !auth || !db) {
+    throw new Error(
+      "Firebase has not been initialized. This method can only be used on the client side."
+    );
+  }
+  return { app: firebaseApp, auth, db };
+};

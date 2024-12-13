@@ -1,5 +1,3 @@
-// src/app/dashboard/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,21 +14,19 @@ import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { TodoFilter as TodoFilterType, TodoCategory } from "@/types";
 import { LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { ensureFirebaseInitialized } from "@/lib/firebase";
 
 export default function DashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isInitialized } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<
-    TodoCategory | undefined
-  >(undefined);
+  const [activeCategory, setActiveCategory] = useState<TodoCategory | undefined>(undefined);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const {
-    // todos,
     filteredTodos,
     loading: todosLoading,
     error,
-    // filter,
     setFilter,
     refresh,
   } = useTodos({
@@ -39,15 +35,50 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
-    }
-  }, [user, authLoading, router]);
+    const checkAuthAndRedirect = async () => {
+      try {
+        if (isInitialized && !authLoading && !user) {
+          await ensureFirebaseInitialized();
+          router.push("/auth");
+        }
+      } catch (error) {
+        console.error("Firebase initialization failed:", error);
+        router.push("/auth");
+      }
+    };
 
-  if (authLoading || todosLoading) {
-    return <Loading fullScreen size="lg" text="読み込み中..." />;
+    checkAuthAndRedirect();
+  }, [user, authLoading, isInitialized, router]);
+
+  // サインアウト処理
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      const { auth } = ensureFirebaseInitialized();
+      await auth.signOut();
+      router.push("/auth");
+    } catch (error) {
+      console.error("サインアウトに失敗しました:", error);
+      setIsSigningOut(false);
+    }
+  };
+
+  // 初期化前とローディング中の表示
+  if (!isInitialized || authLoading) {
+    return <Loading fullScreen size="lg" text="認証情報を確認中..." />;
   }
 
+  // 認証チェック
+  if (!user) {
+    return <Loading fullScreen size="lg" text="認証ページに移動中..." />;
+  }
+
+  // Todoデータのローディング中
+  if (todosLoading) {
+    return <Loading fullScreen size="lg" text="データを読み込み中..." />;
+  }
+
+  // エラー表示
   if (error) {
     return (
       <Error
@@ -69,6 +100,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+                aria-label={isSidebarOpen ? "サイドバーを閉じる" : "サイドバーを開く"}
               >
                 {isSidebarOpen ? <X /> : <Menu />}
               </button>
@@ -86,7 +118,10 @@ export default function DashboardPage() {
                 variant="ghost"
                 size="sm"
                 leftIcon={<LogOut className="w-4 h-4" />}
-                onClick={() => router.push("/auth")}
+                onClick={handleSignOut}
+                disabled={isSigningOut}
+                isLoading={isSigningOut}
+                loadingText="サインアウト中..."
               >
                 サインアウト
               </Button>
@@ -101,15 +136,15 @@ export default function DashboardPage() {
           {/* サイドバー */}
           <aside
             className={`
-            lg:w-64 flex-shrink-0
-            ${isSidebarOpen ? "block" : "hidden lg:block"}
-          `}
+              lg:w-64 flex-shrink-0
+              ${isSidebarOpen ? "block" : "hidden lg:block"}
+            `}
           >
             <div className="space-y-6">
               <Card>
                 <CardHeader title="統計" />
                 <CardContent>
-                  <TodoStats userId={user?.id ?? ""} />
+                  <TodoStats userId={user.id} />
                 </CardContent>
               </Card>
 
@@ -131,7 +166,6 @@ export default function DashboardPage() {
           {/* メインエリア */}
           <div className="flex-1">
             <div className="space-y-6">
-              {/* Todo作成フォーム */}
               <Card>
                 <CardHeader title="新しいタスク" />
                 <CardContent>
@@ -139,7 +173,6 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Todoリスト */}
               <Card>
                 <CardHeader
                   title={

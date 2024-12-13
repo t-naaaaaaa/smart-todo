@@ -1,10 +1,8 @@
 // src/lib/firebase.ts
-
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Firebase設定
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,9 +12,11 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Firebaseの初期化（重複初期化を防ぐ）
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// クライアントサイドでのみ初期化を行う
+const firebaseApp = 
+  typeof window !== "undefined" && !getApps().length 
+    ? initializeApp(firebaseConfig) 
+    : getApps()[0];
 
-export { app, auth, db };
+export const auth = getAuth(firebaseApp);
+export const db = getFirestore(firebaseApp);

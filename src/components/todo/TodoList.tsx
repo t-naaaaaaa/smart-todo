@@ -45,9 +45,10 @@ export function TodoList({
     }
   };
 
-  useEffect(() => {
-    fetchTodos();
-  }, [user, category]);
+useEffect(() => {
+  fetchTodos();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [user, category]);
 
   // フィルタリングとソート
   const filteredAndSortedTodos = useMemo(() => {

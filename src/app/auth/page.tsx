@@ -1,4 +1,5 @@
-"use client";
+"use client"; // クライアントコンポーネントで実行
+// コード行ごとにコメントを記載します。
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -20,12 +21,10 @@ export default function AuthPage() {
     }
   }, [user, loading, isInitialized, router]);
 
-  // Firebaseの初期化待ち or ローディング中の表示
   if (!isInitialized || loading) {
     return <Loading fullScreen size="lg" text="読み込み中..." />;
   }
 
-  // エラー発生時の表示
   if (error) {
     return (
       <Error
@@ -37,7 +36,6 @@ export default function AuthPage() {
     );
   }
 
-  // リダイレクト中の表示
   if (redirecting) {
     return <Loading fullScreen size="lg" text="ダッシュボードに移動中..." />;
   }
@@ -58,9 +56,9 @@ export default function AuthPage() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-center">
-              <SignInButton 
-                size="lg" 
-                fullWidth 
+              <SignInButton
+                size="lg"
+                fullWidth
                 className="shadow-sm hover:shadow-md transition-shadow"
               />
             </div>

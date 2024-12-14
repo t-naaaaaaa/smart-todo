@@ -1,4 +1,5 @@
 // src/components/ui/Error.tsx
+"use client";
 
 import { AlertTriangle, XCircle } from "lucide-react";
 import { Button } from "./Button";

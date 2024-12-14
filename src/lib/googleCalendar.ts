@@ -1,9 +1,8 @@
-// src/lib/googleCalendar.ts
-
+"use client"; // クライアント側でのみ実行
 
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { doc, setDoc, getDoc, collection } from "firebase/firestore";
-import { ensureFirebaseInitialized } from "./firebase";
+import { getFirebaseServices } from "./firebase"; // ensureFirebaseInitializedの代わり
 import { Todo } from "@/types";
 import { dateUtils } from "@/utils/date";
 
@@ -29,7 +28,11 @@ export class GoogleCalendarService {
 
   private static async getAccessToken(): Promise<string | null> {
     try {
-      const { auth } = ensureFirebaseInitialized();
+      const { auth } = getFirebaseServices();
+      if (!auth) {
+        throw new Error("Authが初期化されていません");
+      }
+
       const provider = new GoogleAuthProvider();
       this.SCOPES.forEach((scope) => provider.addScope(scope));
 
@@ -47,13 +50,16 @@ export class GoogleCalendarService {
     }
   }
 
-  // TodoとCalendarイベントのマッピングを保存
   private static async saveEventMapping(
     userId: string,
     todoId: string,
     eventId: string
   ): Promise<void> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) {
+      throw new Error("Firestoreが初期化されていません");
+    }
+
     const mappingRef = doc(collection(db, "calendar_mappings"), `${todoId}`);
     await setDoc(mappingRef, {
       userId,
@@ -65,24 +71,28 @@ export class GoogleCalendarService {
   }
 
   private static async getEventMapping(todoId: string): Promise<string | null> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) {
+      throw new Error("Firestoreが初期化されていません");
+    }
+
     const mappingRef = doc(collection(db, "calendar_mappings"), `${todoId}`);
     const mappingDoc = await getDoc(mappingRef);
 
     if (mappingDoc.exists()) {
-      return mappingDoc.data().eventId;
+      const data = mappingDoc.data();
+      const eventId = data.eventId as string | undefined;
+      return eventId ?? null;
     }
 
     return null;
   }
 
-  // カレンダーイベントの作成
   static async createCalendarEvent(todo: Todo): Promise<boolean> {
     try {
       const accessToken = await this.getAccessToken();
       if (!accessToken) return false;
 
-      // イベントの終了時間を開始時間の30分後に設定
       const startTime = new Date(todo.dueDate);
       const endTime = dateUtils.addTime(startTime, 30, "minutes");
 
@@ -128,7 +138,6 @@ export class GoogleCalendarService {
     }
   }
 
-  // カレンダーイベントの更新
   static async updateCalendarEvent(todo: Todo): Promise<boolean> {
     try {
       const accessToken = await this.getAccessToken();
@@ -177,7 +186,6 @@ export class GoogleCalendarService {
     }
   }
 
-  // カレンダーイベントの削除
   static async deleteCalendarEvent(todoId: string): Promise<boolean> {
     try {
       const accessToken = await this.getAccessToken();

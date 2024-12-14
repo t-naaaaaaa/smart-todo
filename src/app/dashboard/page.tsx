@@ -1,4 +1,4 @@
-"use client";
+"use client"; // クライアントコンポーネントとして実行
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,18 +9,22 @@ import { TodoList } from "@/components/todo/TodoList";
 import { TodoStats } from "@/components/todo/TodoStats";
 import { TodoFilter } from "@/components/todo/TodoFilter";
 import { Loading } from "@/components/ui/Loading";
-import { Error } from "@/components/ui/Error";
+// `Error`コンポーネントと`new Error()`を区別するため、別名でインポート
+import { Error as ErrorUI } from "@/components/ui/Error";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { TodoFilter as TodoFilterType, TodoCategory } from "@/types";
 import { LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { ensureFirebaseInitialized } from "@/lib/firebase";
+import { getFirebaseServices } from "@/lib/firebase";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, isInitialized } = useAuth();
   const router = useRouter();
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<TodoCategory | undefined>(undefined);
+  const [activeCategory, setActiveCategory] = useState<
+    TodoCategory | undefined
+  >(undefined);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const {
@@ -35,53 +39,39 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    const checkAuthAndRedirect = async () => {
-      try {
-        if (isInitialized && !authLoading && !user) {
-          await ensureFirebaseInitialized();
-          router.push("/auth");
-        }
-      } catch (error) {
-        console.error("Firebase initialization failed:", error);
-        router.push("/auth");
-      }
-    };
-
-    checkAuthAndRedirect();
+    if (isInitialized && !authLoading && !user) {
+      router.push("/auth");
+    }
   }, [user, authLoading, isInitialized, router]);
 
-  // サインアウト処理
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      const { auth } = ensureFirebaseInitialized();
+      const { auth } = getFirebaseServices();
+      if (!auth) throw new globalThis.Error("Authが初期化されていません");
       await auth.signOut();
       router.push("/auth");
-    } catch (error) {
-      console.error("サインアウトに失敗しました:", error);
+    } catch (err) {
+      console.error("サインアウトに失敗しました:", err);
       setIsSigningOut(false);
     }
   };
 
-  // 初期化前とローディング中の表示
   if (!isInitialized || authLoading) {
     return <Loading fullScreen size="lg" text="認証情報を確認中..." />;
   }
 
-  // 認証チェック
   if (!user) {
     return <Loading fullScreen size="lg" text="認証ページに移動中..." />;
   }
 
-  // Todoデータのローディング中
   if (todosLoading) {
     return <Loading fullScreen size="lg" text="データを読み込み中..." />;
   }
 
-  // エラー表示
   if (error) {
     return (
-      <Error
+      <ErrorUI
         fullScreen
         title="データの読み込みに失敗しました"
         message="再度お試しください"
@@ -92,7 +82,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -100,7 +89,9 @@ export default function DashboardPage() {
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 className="lg:hidden p-2 rounded-md hover:bg-gray-100"
-                aria-label={isSidebarOpen ? "サイドバーを閉じる" : "サイドバーを開く"}
+                aria-label={
+                  isSidebarOpen ? "サイドバーを閉じる" : "サイドバーを開く"
+                }
               >
                 {isSidebarOpen ? <X /> : <Menu />}
               </button>
@@ -130,10 +121,8 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* サイドバー */}
           <aside
             className={`
               lg:w-64 flex-shrink-0
@@ -163,7 +152,6 @@ export default function DashboardPage() {
             </div>
           </aside>
 
-          {/* メインエリア */}
           <div className="flex-1">
             <div className="space-y-6">
               <Card>

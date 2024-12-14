@@ -1,14 +1,14 @@
-// src/lib/db/schema.ts
+"use client";
 
+// コード行ごとにコメントを記載します。
 import { CollectionReference, collection } from "firebase/firestore";
-import { ensureFirebaseInitialized } from "../firebase";
+import { getFirebaseServices } from "../firebase";
 import {
   FirestoreUser,
   FirestoreTodo,
   FirestoreNotificationSettings,
 } from "@/types/database";
 
-// コレクション名の定義
 export const COLLECTIONS = {
   USERS: "users",
   TODOS: "todos",
@@ -17,7 +17,6 @@ export const COLLECTIONS = {
   BACKUPS: "backups",
 } as const;
 
-// インデックス定義
 export const INDEXES = {
   TODOS: {
     BY_USER: ["userId", "dueDate"],
@@ -30,7 +29,6 @@ export const INDEXES = {
   },
 } as const;
 
-// バリデーションルール
 export const VALIDATION_RULES = {
   TODO: {
     TEXT_MAX_LENGTH: 1000,
@@ -41,13 +39,12 @@ export const VALIDATION_RULES = {
   },
 } as const;
 
-// 各コレクションの型安全な参照を取得する関数
 export function getCollection<T>(name: string): CollectionReference<T> {
-  const { db } = ensureFirebaseInitialized();
+  const { db } = getFirebaseServices();
+  if (!db) throw new Error("Firestoreが初期化されていません");
   return collection(db, name) as CollectionReference<T>;
 }
 
-// コレクション参照のエクスポート
 export const collections = {
   users: () => getCollection<FirestoreUser>(COLLECTIONS.USERS),
   todos: () => getCollection<FirestoreTodo>(COLLECTIONS.TODOS),
@@ -60,12 +57,11 @@ export const collections = {
   backups: () => getCollection(COLLECTIONS.BACKUPS),
 };
 
-// デフォルト値の定義
 export const DEFAULTS = {
   NOTIFICATION_SETTINGS: {
     enableEmailNotifications: true,
     enablePushNotifications: true,
-    reminderTiming: 30, // minutes
+    reminderTiming: 30,
     urgentTaskNotification: true,
     overdueTaskNotification: true,
   },
@@ -76,7 +72,6 @@ export const DEFAULTS = {
   },
 } as const;
 
-// セキュリティルール用の定数
 export const SECURITY_RULES = {
   MAX_TODOS_PER_USER: 1000,
   MAX_BATCH_OPERATIONS: 500,

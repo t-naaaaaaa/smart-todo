@@ -2,20 +2,18 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { User as FirebaseUser, onAuthStateChanged } from "firebase/auth";
-import { ensureFirebaseInitialized } from "@/lib/firebase";
 import { userDb } from "@/lib/db";
 import { User } from "@/types";
+import { getFirebaseServices } from "@/lib/firebase";
 
-// AuthContextの型定義
 interface AuthContextType {
-  user: User | null; // アプリユーザー
-  firebaseUser: FirebaseUser | null; // Firebase認証ユーザー
-  loading: boolean; // 認証情報のロード中フラグ
-  error: Error | null; // 発生したエラー情報
-  isInitialized: boolean; // Firebaseの初期化完了フラグ
+  user: User | null;
+  firebaseUser: FirebaseUser | null;
+  loading: boolean;
+  error: Error | null;
+  isInitialized: boolean;
 }
 
-// デフォルト値を持つAuthContextの作成
 const AuthContext = createContext<AuthContextType>({
   user: null,
   firebaseUser: null,
@@ -24,13 +22,7 @@ const AuthContext = createContext<AuthContextType>({
   isInitialized: false,
 });
 
-// AuthProviderコンポーネントのprops型
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-// AuthProviderコンポーネント
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,86 +30,62 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    let unsubscribe = () => {};
+    // サーバー側では実行しないガード
+    if (typeof window === "undefined") return;
 
-    const initializeAuth = async () => {
-      if (typeof window === "undefined") return;
+    const { auth } = getFirebaseServices();
+    if (!auth) {
+      setError(new Error("Authが初期化されていません"));
+      setLoading(false);
+      setIsInitialized(true);
+      return;
+    }
 
-      try {
-        const { auth } = await ensureFirebaseInitialized();
-        setIsInitialized(true);
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (currentFirebaseUser) => {
+        setFirebaseUser(currentFirebaseUser);
+        setLoading(true);
 
-        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-          setFirebaseUser(firebaseUser);
-          setLoading(true);
+        try {
+          if (currentFirebaseUser) {
+            const appUser = {
+              id: currentFirebaseUser.uid,
+              email: currentFirebaseUser.email ?? "",
+              displayName: currentFirebaseUser.displayName ?? "Unknown User",
+              photoURL: currentFirebaseUser.photoURL ?? "",
+            };
 
-          try {
-            if (firebaseUser) {
-              const appUser: Omit<User, "createdAt" | "updatedAt"> = {
-                id: firebaseUser.uid,
-                email: firebaseUser.email ?? "",
-                displayName: firebaseUser.displayName ?? "Unknown User",
-                photoURL: firebaseUser.photoURL ?? "",
-              };
+            await userDb.createOrUpdate(appUser);
+            const fullUser = await userDb.get(currentFirebaseUser.uid);
+            if (!fullUser) throw new Error("ユーザー情報の取得に失敗しました");
 
-              await userDb.createOrUpdate(appUser);
-              const fullUser = await userDb.get(firebaseUser.uid);
-              if (!fullUser) {
-                throw new Error("ユーザー情報の取得に失敗しました");
-              }
-
-              setUser(fullUser);
-            } else {
-              setUser(null);
-            }
-          } catch (err) {
-            console.error("Authentication error:", err);
-            setError(
-              err instanceof Error ? err : new Error("認証エラーが発生しました")
-            );
-          } finally {
-            setLoading(false);
+            setUser(fullUser);
+          } else {
+            setUser(null);
           }
-        });
-      } catch (err) {
-        console.error("Failed to initialize Firebase:", err);
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Firebaseの初期化に失敗しました")
-        );
-        setLoading(false);
+        } catch (err) {
+          console.error("Authentication error:", err);
+          setError(
+            err instanceof Error ? err : new Error("認証エラーが発生しました")
+          );
+        } finally {
+          setLoading(false);
+          setIsInitialized(true);
+        }
       }
-    };
+    );
 
-    initializeAuth();
     return () => unsubscribe();
   }, []);
 
-  // コンテキストの値
-  const value: AuthContextType = {
-    user,
-    firebaseUser,
-    loading,
-    error,
-    isInitialized,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ user, firebaseUser, loading, error, isInitialized }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-/**
- * 認証情報を使用するためのカスタムフック
- * @throws {Error} AuthProviderの外で使用された場合
- * @returns {AuthContextType} 認証コンテキストの値
- */
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
-
-// AuthContextをエクスポート（テスト用）
-export { AuthContext };
+export const useAuth = () => useContext(AuthContext);

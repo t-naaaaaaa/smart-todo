@@ -1,8 +1,8 @@
 // src/types/database.ts
 
-// import { Timestamp, DocumentData, SnapshotOptions } from "@firebase/firestore";
+// import { Timestamp, DocumentData, SnapshotOptions } from "firebase/firestore";
 
-import { Timestamp } from "@firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import { Todo, User, NotificationSettings } from "./index";
 
 // Firestoreドキュメントをより厳密に

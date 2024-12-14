@@ -1,17 +1,17 @@
-// src/lib/db/migrations.ts
+"use client";
 
 import {
   Timestamp,
   writeBatch,
   doc,
-  collection,
   query,
   getDocs,
-  getDoc,
   setDoc,
+  getDoc,
+  collection,
   FieldValue,
 } from "firebase/firestore";
-import { ensureFirebaseInitialized } from "../firebase";
+import { getFirebaseServices } from "../firebase";
 import { collections } from "./schema";
 
 interface Migration {
@@ -46,13 +46,15 @@ export class DatabaseMigration {
       version: 2,
       description: "Add calendar sync fields to todos",
       up: async () => {
-        const { db } = ensureFirebaseInitialized();
+        const { db } = getFirebaseServices();
+        if (!db) throw new Error("Firestoreが初期化されていません");
         const todosRef = collections.todos();
         const snapshot = await getDocs(query(todosRef));
 
         const batch = writeBatch(db);
-        snapshot.docs.forEach((doc) => {
-          batch.update(doc.ref, {
+        snapshot.docs.forEach((docSnap) => {
+          // ここでisCalendarSynced等は上書き用に使うだけで、変数として使わないので分割代入で受け取らない
+          batch.update(docSnap.ref, {
             isCalendarSynced: false,
             calendarEventId: null as unknown as FieldValue,
             updatedAt: Timestamp.now(),
@@ -62,16 +64,18 @@ export class DatabaseMigration {
         await batch.commit();
       },
       down: async () => {
-        const { db } = ensureFirebaseInitialized();
+        const { db } = getFirebaseServices();
+        if (!db) throw new Error("Firestoreが初期化されていません");
         const todosRef = collections.todos();
         const snapshot = await getDocs(query(todosRef));
 
         const batch = writeBatch(db);
-        snapshot.docs.forEach((doc) => {
-          const data = doc.data();
+        snapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data();
+          // 不要なフィールドは取り出さない
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { isCalendarSynced, calendarEventId, ...rest } = data;
-          batch.update(doc.ref, {
+          batch.update(docSnap.ref, {
             ...rest,
             updatedAt: Timestamp.now(),
           });
@@ -83,14 +87,16 @@ export class DatabaseMigration {
   ];
 
   private async getCurrentVersion(): Promise<number> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) throw new Error("Firestoreが初期化されていません");
     const migrationRef = doc(db, this.MIGRATION_COLLECTION, "current");
     const snapshot = await getDoc(migrationRef);
     return snapshot.exists() ? snapshot.data()?.version ?? 0 : 0;
   }
 
   private async saveMigrationStatus(status: MigrationStatus): Promise<void> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) throw new Error("Firestoreが初期化されていません");
     const migrationRef = doc(db, this.MIGRATION_COLLECTION, "current");
     await setDoc(migrationRef, status);
 
@@ -111,7 +117,6 @@ export class DatabaseMigration {
 
     try {
       if (currentVersion < finalVersion) {
-        // アップグレード
         for (const migration of this.migrations) {
           if (
             migration.version > currentVersion &&
@@ -129,7 +134,6 @@ export class DatabaseMigration {
           }
         }
       } else if (currentVersion > finalVersion) {
-        // ダウングレード
         for (const migration of [...this.migrations].reverse()) {
           if (
             migration.version <= currentVersion &&
@@ -162,11 +166,12 @@ export class DatabaseMigration {
   }
 
   async getMigrationHistory(): Promise<MigrationStatus[]> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) throw new Error("Firestoreが初期化されていません");
     const migrationsRef = collection(db, this.MIGRATION_COLLECTION);
     const snapshot = await getDocs(query(migrationsRef));
     return snapshot.docs
-      .map((doc) => doc.data() as MigrationStatus)
+      .map((docSnap) => docSnap.data() as MigrationStatus)
       .sort((a, b) => b.executedAt.toMillis() - a.executedAt.toMillis());
   }
 }

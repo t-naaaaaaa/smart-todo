@@ -35,7 +35,7 @@ export interface Todo {
   completed: boolean;
   createdAt: Date;
   updatedAt: Date;
-  completedAt?: Date;
+  completedAt?: Date | null; // nullも許可
   isCalendarSynced: boolean;
   calendarEventId?: string;
 }
@@ -80,7 +80,7 @@ export interface APIResponse<T> {
 }
 
 // 共通のステータス型
-export type Status = 'idle' | 'loading' | 'success' | 'error';
+export type Status = "idle" | "loading" | "success" | "error";
 
 // 検索クエリの型
 export interface SearchQuery {

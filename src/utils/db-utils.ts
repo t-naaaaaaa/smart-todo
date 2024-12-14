@@ -1,3 +1,5 @@
+"use client"; // クライアント側でのみ実行
+
 import {
   Timestamp,
   DocumentData,
@@ -11,17 +13,7 @@ import {
   getDoc,
   FirestoreError,
 } from "firebase/firestore";
-import { ensureFirebaseInitialized } from "@/lib/firebase";
-
-// // 日付を含むオブジェクトの型
-// type DateObject = {
-//   [key: string]: Date | Timestamp | DateObject | null | undefined;
-// };
-
-// // DocumentDataの拡張型
-// type ExtendedDocumentData = {
-//   [key: string]: Date | Timestamp | Record<string, unknown> | null | undefined;
-// };
+import { getFirebaseServices } from "@/lib/firebase"; // ensureFirebaseInitializedから切り替え
 
 // FirestoreのErrorコードの型
 type FirestoreErrorCode =
@@ -87,8 +79,8 @@ export const dbUtils = {
 
   // ドキュメントの存在確認
   async exists(docRef: DocumentReference): Promise<boolean> {
-    const doc = await getDoc(docRef);
-    return doc.exists();
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists();
   },
 
   // コレクション内の重複チェック
@@ -98,7 +90,11 @@ export const dbUtils = {
     value: string | number | boolean | null,
     excludeId?: string
   ): Promise<boolean> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) {
+      throw new Error("Firestoreが初期化されていません");
+    }
+
     const q = query(
       collection(db, collectionName),
       where(field, "==", value),
@@ -110,7 +106,6 @@ export const dbUtils = {
     if (!excludeId) return true;
     return snapshot.docs[0].id !== excludeId;
   },
-
 
   // エラーハンドリング用のユーティリティ
   handleError(error: FirestoreError | Error): never {

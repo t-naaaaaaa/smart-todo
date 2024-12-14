@@ -1,3 +1,6 @@
+// db.ts
+"use client";
+
 import {
   doc,
   getDoc,
@@ -16,31 +19,30 @@ import {
 import { COLLECTIONS } from "./db/schema";
 import { FirestoreTodo, FirestoreUser } from "@/types/database";
 import { Todo, User, TodoCategory } from "@/types";
-import { ensureFirebaseInitialized } from "./firebase";
+import { getFirebaseServices } from "./firebase"; // dbはここから取得する
 
-// Firestore データ変換ユーティリティ
-const convertTimestampToDate = <T>(
-  data: FirestoreTodo | { [key: string]: unknown }
-): T => {
-  const converted = { ...data };
-  Object.keys(data).forEach((key) => {
-    const value = data[key as keyof typeof data];
-    if (value instanceof Timestamp) {
-      converted[key as keyof typeof converted] = value.toDate();
-    }
-  });
-  return converted as T;
-};
+// FirestoreTodoをTodoに変換するヘルパー関数
+function firestoreTodoToTodo(firestoreTodo: FirestoreTodo): Todo {
+  return {
+    ...firestoreTodo,
+    dueDate: firestoreTodo.dueDate.toDate(),
+    createdAt: firestoreTodo.createdAt.toDate(),
+    updatedAt: firestoreTodo.updatedAt.toDate(),
+    completedAt: firestoreTodo.completedAt
+      ? firestoreTodo.completedAt.toDate()
+      : null,
+  };
+}
 
-// コレクション参照を取得する関数
-const getCollection = (collectionName: string) => {
-  const { db } = ensureFirebaseInitialized();
+function getCollection(collectionName: string) {
+  const { db } = getFirebaseServices();
+  if (!db) {
+    throw new globalThis.Error("Firestoreが初期化されていません");
+  }
   return collection(db, collectionName);
-};
+}
 
-// Todoデータベース操作
 export const todoDb = {
-  // Todo作成
   async create(
     userId: string,
     todo: Omit<Todo, "id" | "userId" | "createdAt" | "updatedAt">
@@ -60,21 +62,19 @@ export const todoDb = {
     };
 
     await setDoc(newTodoRef, newTodo);
-    return convertTimestampToDate<Todo>(newTodo);
+    return firestoreTodoToTodo(newTodo);
   },
 
-  // Todo取得
   async get(todoId: string): Promise<Todo | null> {
     const todosRef = getCollection(COLLECTIONS.TODOS);
     const todoRef = doc(todosRef, todoId);
     const todoSnap = await getDoc(todoRef);
 
     if (!todoSnap.exists()) return null;
-
-    return convertTimestampToDate<Todo>(todoSnap.data());
+    const data = todoSnap.data() as FirestoreTodo;
+    return firestoreTodoToTodo(data);
   },
 
-  // ユーザーのTodo一覧取得
   async listByUser(userId: string, category?: TodoCategory): Promise<Todo[]> {
     const todosRef = getCollection(COLLECTIONS.TODOS);
     const constraints = [
@@ -89,12 +89,12 @@ export const todoDb = {
     const q = query(todosRef, ...constraints);
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((doc) =>
-      convertTimestampToDate<Todo>(doc.data())
-    );
+    return querySnapshot.docs.map((docSnap) => {
+      const data = docSnap.data() as FirestoreTodo;
+      return firestoreTodoToTodo(data);
+    });
   },
 
-  // Todo更新
   async update(
     todoId: string,
     updates: Partial<Omit<Todo, "id" | "createdAt" | "updatedAt">>
@@ -117,27 +117,21 @@ export const todoDb = {
         : null;
     }
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (
-        key !== "dueDate" &&
-        key !== "completed" &&
-        value !== null &&
-        value !== undefined
-      ) {
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === "dueDate" || key === "completed") continue;
+      if (value !== null && value !== undefined) {
         (updateData as Record<string, unknown>)[key] = value;
       }
-    });
+    }
 
     await updateDoc(todoRef, updateData);
   },
 
-  // Todo削除
   async delete(todoId: string): Promise<void> {
     const todosRef = getCollection(COLLECTIONS.TODOS);
     await deleteDoc(doc(todosRef, todoId));
   },
 
-  // 緊急タスクの取得
   async getUrgentTodos(userId: string): Promise<Todo[]> {
     const todosRef = getCollection(COLLECTIONS.TODOS);
     const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
@@ -151,15 +145,14 @@ export const todoDb = {
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) =>
-      convertTimestampToDate<Todo>(doc.data())
-    );
+    return querySnapshot.docs.map((docSnap) => {
+      const data = docSnap.data() as FirestoreTodo;
+      return firestoreTodoToTodo(data);
+    });
   },
 };
 
-// ユーザーデータベース操作
 export const userDb = {
-  // ユーザー作成/更新
   async createOrUpdate(
     user: Omit<User, "createdAt" | "updatedAt">
   ): Promise<void> {
@@ -182,7 +175,6 @@ export const userDb = {
     }
   },
 
-  // ユーザー取得
   async get(userId: string): Promise<User | null> {
     const usersRef = getCollection(COLLECTIONS.USERS);
     const userRef = doc(usersRef, userId);
@@ -190,26 +182,11 @@ export const userDb = {
 
     if (!userSnap.exists()) return null;
 
-    const data = userSnap.data();
-    if (!data) return null;
-
-    const convertedData: FirestoreUser = {
-      id: userId, // 追加
-      email: data.email ?? "", // 追加
-      displayName: data.displayName, // 追加
-      photoURL: data.photoURL, // 追加
-      createdAt:
-        data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now(),
-      updatedAt:
-        data.updatedAt instanceof Timestamp ? data.updatedAt : Timestamp.now(),
+    const data = userSnap.data() as FirestoreUser;
+    return {
+      ...data,
+      createdAt: data.createdAt.toDate(),
+      updatedAt: data.updatedAt.toDate(),
     };
-
-    const user: User = {
-      ...convertedData,
-      createdAt: convertedData.createdAt.toDate(),
-      updatedAt: convertedData.updatedAt.toDate(),
-    };
-
-    return user;
   },
 };

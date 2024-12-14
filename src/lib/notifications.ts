@@ -1,5 +1,7 @@
 // src/lib/notifications.ts
 
+"use client";
+
 import { Todo } from "@/types";
 import { dateUtils } from "@/utils/date";
 

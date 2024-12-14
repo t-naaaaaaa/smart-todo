@@ -1,22 +1,23 @@
-"use client";
+"use client"; // クライアントコンポーネントで実行
+// コード行ごとにコメントを記載します。
 
 import { useState } from "react";
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { useAuth } from "./AuthContext";
-import { ensureFirebaseInitialized } from "@/lib/firebase";
+import { getFirebaseServices } from "@/lib/firebase";
 
 interface SignInButtonProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
-  variant?: 'primary' | 'outline';
+  variant?: "primary" | "outline";
   className?: string;
 }
 
-export function SignInButton({ 
-  size = 'md', 
+export function SignInButton({
+  size = "md",
   fullWidth = false,
-  variant = 'primary',
-  className = ''
+  variant = "primary",
+  className = "",
 }: SignInButtonProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,9 @@ export function SignInButton({
   const handleSignIn = async () => {
     try {
       setLoading(true);
-      const { auth } = ensureFirebaseInitialized();
+      const { auth } = getFirebaseServices();
+      if (!auth) throw new Error("Authが初期化されていません");
+
       const provider = new GoogleAuthProvider();
       provider.addScope("https://www.googleapis.com/auth/calendar");
       provider.addScope("https://www.googleapis.com/auth/calendar.events");
@@ -39,7 +42,9 @@ export function SignInButton({
   const handleSignOut = async () => {
     try {
       setLoading(true);
-      const { auth } = ensureFirebaseInitialized();
+      const { auth } = getFirebaseServices();
+      if (!auth) throw new Error("Authが初期化されていません");
+
       await signOut(auth);
     } catch (error) {
       console.error("サインアウトエラー:", error);
@@ -49,16 +54,16 @@ export function SignInButton({
   };
 
   const sizeStyles = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2',
-    lg: 'px-6 py-3 text-lg'
+    sm: "px-3 py-1.5 text-sm",
+    md: "px-4 py-2",
+    lg: "px-6 py-3 text-lg",
   };
 
   const baseStyles = `
     rounded-lg font-medium transition-colors duration-200 
     flex items-center justify-center
     ${sizeStyles[size]}
-    ${fullWidth ? 'w-full' : ''}
+    ${fullWidth ? "w-full" : ""}
   `;
 
   const variantStyles = {
@@ -75,7 +80,6 @@ export function SignInButton({
     ${className}
   `;
 
-  // サインアウトボタン
   if (user) {
     return (
       <button
@@ -85,7 +89,7 @@ export function SignInButton({
         aria-label="サインアウト"
       >
         {loading ? (
-          <div 
+          <div
             className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
             role="status"
             aria-label="読み込み中"
@@ -96,7 +100,6 @@ export function SignInButton({
     );
   }
 
-  // サインインボタン
   return (
     <button
       onClick={handleSignIn}
@@ -105,7 +108,7 @@ export function SignInButton({
       aria-label="Googleでサインイン"
     >
       {loading ? (
-        <div 
+        <div
           className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
           role="status"
           aria-label="読み込み中"

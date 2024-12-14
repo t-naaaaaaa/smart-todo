@@ -1,6 +1,5 @@
-// src/app/page.tsx
-
-"use client";
+"use client"; // クライアントコンポーネントで実行
+// コード行ごとにコメントを記載します。
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -13,7 +12,6 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!loading) {
-      // 認証状態に応じてリダイレクト
       if (user) {
         router.push("/dashboard");
       } else {
@@ -22,11 +20,9 @@ export default function HomePage() {
     }
   }, [user, loading, router]);
 
-  // ローディング中は読み込み表示
   if (loading) {
     return <Loading fullScreen size="lg" text="読み込み中..." />;
   }
 
-  // リダイレクト中は何も表示しない
   return null;
 }

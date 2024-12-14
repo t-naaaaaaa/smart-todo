@@ -1,4 +1,4 @@
-// src/lib/db/backup.ts (Part 1)
+"use client";
 
 import {
   collection,
@@ -13,10 +13,9 @@ import {
   Timestamp,
   writeBatch,
 } from "firebase/firestore";
-import { ensureFirebaseInitialized } from "../firebase";
+import { getFirebaseServices } from "../firebase";
 import { COLLECTIONS } from "./schema";
 
-// バックアップデータの型定義
 interface FirestoreDocument {
   id: string;
   [key: string]: unknown;
@@ -54,7 +53,9 @@ export class DatabaseBackup {
     status: BackupMetadata["status"] = "complete",
     error?: string
   ): Promise<BackupMetadata> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) throw new Error("Firestoreが初期化されていません");
+
     const backupId = `backup_${Date.now()}`;
     const metadata: BackupMetadata = {
       id: backupId,
@@ -71,7 +72,9 @@ export class DatabaseBackup {
   }
 
   async createBackup(userId: string): Promise<BackupMetadata> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) throw new Error("Firestoreが初期化されていません");
+
     try {
       const collectionsToBackup = [
         COLLECTIONS.TODOS,
@@ -91,11 +94,11 @@ export class DatabaseBackup {
       for (const collectionName of collectionsToBackup) {
         const collectionRef = collection(db, collectionName);
         const q = query(collectionRef, where("userId", "==", userId));
-
         const snapshot = await getDocs(q);
-        backupData[collectionName] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+
+        backupData[collectionName] = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
         }));
 
         metadata.dataCount[collectionName] = snapshot.size;
@@ -116,10 +119,12 @@ export class DatabaseBackup {
         error instanceof Error ? error.message : "Unknown backup error";
       throw new Error(`Backup failed: ${errorMessage}`);
     }
-  }// src/lib/db/backup.ts (Part 2)
+  }
 
   async restoreFromBackup(backupId: string): Promise<void> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) throw new Error("Firestoreが初期化されていません");
+
     const backupRef = doc(db, COLLECTIONS.BACKUPS, backupId);
     const backupDoc = await getDoc(backupRef);
 
@@ -200,7 +205,9 @@ export class DatabaseBackup {
     userId: string,
     limit_?: number
   ): Promise<BackupMetadata[]> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) throw new Error("Firestoreが初期化されていません");
+
     const backupsRef = collection(db, COLLECTIONS.BACKUPS);
     const q = query(
       backupsRef,
@@ -210,11 +217,13 @@ export class DatabaseBackup {
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => doc.data() as BackupMetadata);
+    return snapshot.docs.map((docSnap) => docSnap.data() as BackupMetadata);
   }
 
   async cleanupOldBackups(userId: string, keepLast: number = 5): Promise<void> {
-    const { db } = ensureFirebaseInitialized();
+    const { db } = getFirebaseServices();
+    if (!db) throw new Error("Firestoreが初期化されていません");
+
     const backups = await this.getBackupHistory(userId);
     const backupsToDelete = backups.slice(keepLast);
 
